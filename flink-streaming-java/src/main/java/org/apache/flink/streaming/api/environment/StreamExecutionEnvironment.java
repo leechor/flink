@@ -2660,6 +2660,18 @@ public class StreamExecutionEnvironment implements AutoCloseable {
 
     /**
      * Creates a {@link LocalStreamEnvironment}. The local execution environment will run the
+     * program in a multi-threaded fashion in the same JVM as the environment was created in. The
+     * default parallelism of the local environment is the number of hardware contexts (CPU cores /
+     * threads), It will use the {@link ClassLoader} specified in the parameter.
+     * @param userClassloader The classloader to use for the local execution.
+     * @return A local execution environment with the specified {@link ClassLoader}.
+     */
+    public static LocalStreamEnvironment createLocalEnvironment(ClassLoader userClassloader) {
+        return createLocalEnvironment(defaultLocalParallelism, new Configuration(), userClassloader);
+    }
+
+    /**
+     * Creates a {@link LocalStreamEnvironment}. The local execution environment will run the
      * program in a multi-threaded fashion in the same JVM as the environment was created in. It
      * will use the parallelism specified in the parameter.
      *
@@ -2681,10 +2693,25 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      */
     public static LocalStreamEnvironment createLocalEnvironment(
             int parallelism, Configuration configuration) {
+        return createLocalEnvironment(parallelism, configuration, null);
+    }
+
+    /**
+     * Creates a {@link LocalStreamEnvironment}. The local execution environment will run the
+     * program in a multi-threaded fashion in the same JVM as the environment was created in. It
+     * will use the parallelism specified in the parameter.
+     *
+     * @param parallelism The parallelism for the local environment.
+     * @param configuration Pass a custom configuration into the cluster
+     * @param userClassloader The classloader to use for the local execution.
+     * @return A local execution environment with the specified parallelism.
+     */
+    public static LocalStreamEnvironment createLocalEnvironment(
+            int parallelism, Configuration configuration, ClassLoader userClassloader) {
         Configuration copyOfConfiguration = new Configuration();
         copyOfConfiguration.addAll(configuration);
         copyOfConfiguration.set(CoreOptions.DEFAULT_PARALLELISM, parallelism);
-        return createLocalEnvironment(copyOfConfiguration);
+        return createLocalEnvironment(copyOfConfiguration, userClassloader);
     }
 
     /**
@@ -2695,13 +2722,25 @@ public class StreamExecutionEnvironment implements AutoCloseable {
      * @return A local execution environment with the specified parallelism.
      */
     public static LocalStreamEnvironment createLocalEnvironment(Configuration configuration) {
+        return createLocalEnvironment(configuration, null);
+    }
+
+    /**
+     * Creates a {@link LocalStreamEnvironment}. The local execution environment will run the
+     * program in a multi-threaded fashion in the same JVM as the environment was created in.
+     *
+     * @param configuration Pass a custom configuration into the cluster
+     * @param userClassloader The classloader to use for the local execution.
+     * @return A local execution environment with the specified parallelism.
+     */
+    public static LocalStreamEnvironment createLocalEnvironment(Configuration configuration, ClassLoader userClassloader) {
         if (configuration.getOptional(CoreOptions.DEFAULT_PARALLELISM).isPresent()) {
-            return new LocalStreamEnvironment(configuration);
+            return new LocalStreamEnvironment(configuration, userClassloader);
         } else {
             Configuration copyOfConfiguration = new Configuration();
             copyOfConfiguration.addAll(configuration);
             copyOfConfiguration.set(CoreOptions.DEFAULT_PARALLELISM, defaultLocalParallelism);
-            return new LocalStreamEnvironment(copyOfConfiguration);
+            return new LocalStreamEnvironment(copyOfConfiguration, userClassloader);
         }
     }
 
@@ -2785,6 +2824,27 @@ public class StreamExecutionEnvironment implements AutoCloseable {
     public static StreamExecutionEnvironment createRemoteEnvironment(
             String host, int port, Configuration clientConfig, String... jarFiles) {
         return new RemoteStreamEnvironment(host, port, clientConfig, jarFiles);
+    }
+
+    /**
+     * Creates a {@link RemoteStreamEnvironment}. The remote environment sends (parts of) the
+     * program to a cluster for execution. Note that all file paths used in the program must be
+     * accessible from the cluster. The execution will use the specified parallelism.
+     *
+     * @param host The host name or address of the master (JobManager), where the program should be
+     *     executed.
+     * @param port The port of the master (JobManager), where the program should be executed.
+     * @param clientConfig The configuration used by the client that connects to the remote cluster.
+     * @param jarFiles The JAR files with code that needs to be shipped to the cluster. If the
+     *     program uses user-defined functions, user-defined input formats, or any libraries, those
+     *     must be provided in the JAR files.
+     * @param userClassLoader The classloader to use for the remote environment.
+     * @return A remote environment that executes the program on a cluster.
+     */
+    public static StreamExecutionEnvironment createRemoteEnvironment(
+            String host, int port, Configuration clientConfig, String[] jarFiles, ClassLoader userClassLoader) {
+        return new RemoteStreamEnvironment(new DefaultExecutorServiceLoader(), host, port, clientConfig, jarFiles,
+                null, null, userClassLoader);
     }
 
     /**

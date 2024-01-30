@@ -144,6 +144,27 @@ public class RemoteStreamEnvironment extends StreamExecutionEnvironment {
             final String[] jarFiles,
             final URL[] globalClasspaths,
             final SavepointRestoreSettings savepointRestoreSettings) {
+        this(
+                executorServiceLoader,
+                host,
+                port,
+                clientConfiguration,
+                jarFiles,
+                globalClasspaths,
+                savepointRestoreSettings,
+                null);
+    }
+
+    @PublicEvolving
+    public RemoteStreamEnvironment(
+            final PipelineExecutorServiceLoader executorServiceLoader,
+            final String host,
+            final int port,
+            final Configuration clientConfiguration,
+            final String[] jarFiles,
+            final URL[] globalClasspaths,
+            final SavepointRestoreSettings savepointRestoreSettings,
+            final ClassLoader userClassLoader) {
         super(
                 executorServiceLoader,
                 validateAndGetEffectiveConfiguration(
@@ -153,8 +174,10 @@ public class RemoteStreamEnvironment extends StreamExecutionEnvironment {
                         jarFiles,
                         globalClasspaths,
                         savepointRestoreSettings),
-                null);
+                userClassLoader);
     }
+
+
 
     private static Configuration getClientConfiguration(final Configuration configuration) {
         return configuration == null ? new Configuration() : configuration;

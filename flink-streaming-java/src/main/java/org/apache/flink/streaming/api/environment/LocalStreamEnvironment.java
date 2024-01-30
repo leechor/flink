@@ -51,6 +51,16 @@ public class LocalStreamEnvironment extends StreamExecutionEnvironment {
         super(validateAndGetConfiguration(configuration));
     }
 
+    /**
+     * Creates a new mini cluster stream environment that configures its local executor with the
+     * given configuration and user code classloader.
+     * @param configuration The configuration used to configure the local executor.
+     * @param userClassloader The classloader provisioned by the user to the environment
+     */
+    public LocalStreamEnvironment(@Nonnull Configuration configuration,  ClassLoader userClassloader) {
+        super(validateAndGetConfiguration(configuration), userClassloader);
+    }
+
     private static Configuration validateAndGetConfiguration(final Configuration configuration) {
         if (!areExplicitEnvironmentsAllowed()) {
             throw new InvalidProgramException(
